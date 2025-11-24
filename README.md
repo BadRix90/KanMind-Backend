@@ -141,4 +141,4 @@ MIT License
 ## Author
 
 Kay Dietrich
-- Email: kontakt@kaydietrich.com
+- Email: contact@kaydietrich.com

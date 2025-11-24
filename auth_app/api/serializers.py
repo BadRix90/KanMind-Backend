@@ -1,35 +1,30 @@
 """
-Django admin configuration for Kanban models.
-Provides admin interfaces for Board, Task, and Comment management.
+Serializers for authentication endpoints.
+Handles user registration and login data validation.
 """
-from django.contrib import admin
-from kanban_app.models import Board, Task, Comment
+from rest_framework import serializers
+from auth_app.models import User
 
 
-@admin.register(Board)
-class BoardAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'owner', 'member_count']
-    search_fields = ['title', 'owner__email']
-    list_filter = ['owner']
-    filter_horizontal = ['members']
+class RegistrationSerializer(serializers.ModelSerializer):
+    repeated_password = serializers.CharField(write_only=True)
     
-    def member_count(self, obj):
-        return obj.members.count()
-    member_count.short_description = 'Members'
+    class Meta:
+        model = User
+        fields = ['fullname', 'email', 'password', 'repeated_password']
+        extra_kwargs = {'password': {'write_only': True}}
+    
+    def validate(self, attrs):
+        if attrs['password'] != attrs['repeated_password']:
+            raise serializers.ValidationError("Passwords do not match")
+        return attrs
+    
+    def create(self, validated_data):
+        validated_data.pop('repeated_password')
+        user = User.objects.create_user(**validated_data)
+        return user
 
 
-@admin.register(Task)
-class TaskAdmin(admin.ModelAdmin):
-    list_display = ['id', 'title', 'board', 'status', 'priority', 
-                    'assignee', 'reviewer', 'due_date']
-    search_fields = ['title', 'description']
-    list_filter = ['status', 'priority', 'board']
-    date_hierarchy = 'due_date'
-
-
-@admin.register(Comment)
-class CommentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'task', 'author', 'created_at']
-    search_fields = ['content', 'author__email']
-    list_filter = ['created_at', 'author']
-    readonly_fields = ['created_at']
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)

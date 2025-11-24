@@ -31,6 +31,7 @@ Django REST Framework backend for KanMind - a Kanban board management applicatio
 1. Clone the repository:
 ```bash
 git clone https://github.com/BadRix90/KanMind-Backend.git
+cd KanMind-Backend
 ```
 
 2. Create virtual environment:

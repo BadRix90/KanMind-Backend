@@ -1,10 +1,13 @@
+"""
+Django admin configuration for Kanban models.
+Provides admin interfaces for Board, Task, and Comment management.
+"""
 from django.contrib import admin
 from kanban_app.models import Board, Task, Comment
 
 
 @admin.register(Board)
 class BoardAdmin(admin.ModelAdmin):
-    """Admin-Interface für Boards"""
     list_display = ['id', 'title', 'owner', 'member_count']
     search_fields = ['title', 'owner__email']
     list_filter = ['owner']
@@ -17,7 +20,6 @@ class BoardAdmin(admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    """Admin-Interface für Tasks"""
     list_display = ['id', 'title', 'board', 'status', 'priority', 
                     'assignee', 'reviewer', 'due_date']
     search_fields = ['title', 'description']
@@ -27,7 +29,6 @@ class TaskAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    """Admin-Interface für Comments"""
     list_display = ['id', 'task', 'author', 'created_at']
     search_fields = ['content', 'author__email']
     list_filter = ['created_at', 'author']

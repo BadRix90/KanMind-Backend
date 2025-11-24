@@ -6,7 +6,6 @@ from kanban_app.models import Board, Task, Comment
 
 
 class BoardTests(TestCase):
-    """Tests für Board-Endpoints"""
 
     def setUp(self):
         self.client = APIClient()
@@ -75,12 +74,10 @@ class BoardTests(TestCase):
             owner=other_user
         )
         response = self.client.delete(f'/api/boards/{board.id}/')
-        self.assertEqual(response.status_code,
-                        status.HTTP_403_FORBIDDEN)  # 403 statt 404
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class TaskTests(TestCase):
-    """Tests für Task-Endpoints"""
 
     def setUp(self):
         self.client = APIClient()
@@ -161,7 +158,6 @@ class TaskTests(TestCase):
 
 
 class CommentTests(TestCase):
-    """Tests für Comment-Endpoints"""
 
     def setUp(self):
         self.client = APIClient()
@@ -234,7 +230,6 @@ class CommentTests(TestCase):
 
 
 class PermissionTests(TestCase):
-    """Tests für Permissions"""
 
     def setUp(self):
         self.client = APIClient()
@@ -272,7 +267,6 @@ class PermissionTests(TestCase):
 
 
 class ModelTests(TestCase):
-    """Tests für Models"""
 
     def setUp(self):
         self.user = User.objects.create_user(

@@ -4,14 +4,12 @@ from auth_app.models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Serializer für User-Daten in Responses"""
     class Meta:
         model = User
         fields = ['id', 'email', 'fullname']
 
 
 class BoardListSerializer(serializers.ModelSerializer):
-    """Serializer für GET /api/boards/"""
     member_count = serializers.SerializerMethodField()
     ticket_count = serializers.SerializerMethodField()
     tasks_to_do_count = serializers.SerializerMethodField()
@@ -37,7 +35,6 @@ class BoardListSerializer(serializers.ModelSerializer):
 
 
 class BoardCreateSerializer(serializers.ModelSerializer):
-    """Serializer für POST /api/boards/"""
     members = serializers.ListField(
         child=serializers.IntegerField(), 
         write_only=True
@@ -58,7 +55,6 @@ class BoardCreateSerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    """Serializer für Tasks mit User-Details"""
     assignee = UserSerializer(read_only=True)
     reviewer = UserSerializer(read_only=True)
     assignee_id = serializers.IntegerField(
@@ -84,7 +80,6 @@ class TaskSerializer(serializers.ModelSerializer):
 
 
 class BoardDetailSerializer(serializers.ModelSerializer):
-    """Serializer für GET /api/boards/{id}/"""
     members = UserSerializer(many=True, read_only=True)
     tasks = TaskSerializer(many=True, read_only=True)
     owner_id = serializers.IntegerField(source='owner.id', read_only=True)
@@ -95,7 +90,6 @@ class BoardDetailSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
-    """Serializer für Comments"""
     author = serializers.CharField(
         source='author.fullname', 
         read_only=True

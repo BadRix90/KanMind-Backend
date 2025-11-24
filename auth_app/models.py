@@ -3,7 +3,7 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    """Custom Manager für User ohne Username"""
+    """Custom manager for User model without username field"""
     
     def create_user(self, email, fullname, password=None):
         if not email:
@@ -25,7 +25,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    """Custom User Model mit fullname statt first/last name"""
+    """Custom User model with fullname instead of first/last name"""
     username = None
     fullname = models.CharField(max_length=255)
     email = models.EmailField(unique=True)

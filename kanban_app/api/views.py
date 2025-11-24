@@ -1,3 +1,7 @@
+"""
+API views for Kanban board management.
+Provides CRUD operations for boards, tasks, and comments with permission checks.
+"""
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -9,15 +13,10 @@ from kanban_app.api.serializers import (
     BoardListSerializer, BoardCreateSerializer,
     BoardDetailSerializer, TaskSerializer, CommentSerializer
 )
-from kanban_app.api.permissions import (
-    IsBoardMember, IsBoardOwner,
-    IsTaskCreatorOrBoardOwner, IsCommentAuthor
-)
 from auth_app.models import User
 
 
 class BoardViewSet(viewsets.ModelViewSet):
-    """ViewSet für Boards"""
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -135,7 +134,6 @@ class BoardViewSet(viewsets.ModelViewSet):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    """ViewSet für Tasks"""
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
 
@@ -279,7 +277,6 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 
 class CommentListCreateView(APIView):
-    """GET/POST /api/tasks/{task_id}/comments/"""
     permission_classes = [IsAuthenticated]
 
     def get(self, request, task_id):
@@ -336,7 +333,6 @@ class CommentListCreateView(APIView):
 
 
 class CommentDeleteView(APIView):
-    """DELETE /api/tasks/{task_id}/comments/{comment_id}/"""
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, task_id, comment_id):

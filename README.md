@@ -23,21 +23,25 @@ Django REST Framework backend for KanMind - a Kanban board management applicatio
 
 ### Prerequisites
 
-- Python 3.14+
+- Python 3.12+
 - pip
 
 ### Setup
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd backend
+git clone https://github.com/BadRix90/KanMind-Backend.git
 ```
 
 2. Create virtual environment:
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Windows:
+venv\Scripts\activate
+
+# Mac/Linux:
+source venv/bin/activate
 ```
 
 3. Install dependencies:
@@ -47,11 +51,10 @@ pip install -r requirements.txt
 
 4. Run migrations:
 ```bash
-python manage.py makemigrations
 python manage.py migrate
 ```
 
-5. Create superuser:
+5. Create superuser (optional):
 ```bash
 python manage.py createsuperuser
 ```
@@ -63,11 +66,17 @@ python manage.py runserver
 
 The API will be available at `http://127.0.0.1:8000/api/`
 
+## Running Tests
+```bash
+python manage.py test
+```
+
 ## API Endpoints
 
 ### Authentication
 - `POST /api/registration/` - Register new user
 - `POST /api/login/` - User login
+- `GET /api/email-check/?email=<email>` - Check if email exists
 
 ### Boards
 - `GET /api/boards/` - List all boards
@@ -77,8 +86,8 @@ The API will be available at `http://127.0.0.1:8000/api/`
 - `DELETE /api/boards/{id}/` - Delete board (owner only)
 
 ### Tasks
-- `GET /api/tasks/assignee/` - Tasks assigned to current user
-- `GET /api/tasks/reviewer/` - Tasks to review
+- `GET /api/tasks/assigned-to-me/` - Tasks assigned to current user
+- `GET /api/tasks/reviewing/` - Tasks to review
 - `POST /api/tasks/` - Create task
 - `PATCH /api/tasks/{id}/` - Update task
 - `DELETE /api/tasks/{id}/` - Delete task
@@ -90,7 +99,7 @@ The API will be available at `http://127.0.0.1:8000/api/`
 
 ## Project Structure
 ```
-backend/
+KanMind-Backend/
 ├── core/                  # Project settings
 ├── auth_app/             # User authentication
 │   ├── api/
@@ -121,9 +130,9 @@ For testing purposes:
 
 ## Development
 
-- All functions follow max 14 lines guideline
 - PEP8 compliant code
 - Token-based authentication required for all endpoints (except login/registration)
+- Comprehensive test coverage
 
 ## License
 

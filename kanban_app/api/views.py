@@ -33,13 +33,6 @@ class BoardViewSet(viewsets.ModelViewSet):
             return BoardDetailSerializer
         return BoardListSerializer
 
-    def get_permissions(self):
-        if self.action == 'destroy':
-            return [IsAuthenticated(), IsBoardOwner()]
-        if self.action in ['retrieve', 'update', 'partial_update']:
-            return [IsAuthenticated(), IsBoardMember()]
-        return [IsAuthenticated()]
-
     def create(self, request):
         serializer = self.get_serializer(
             data=request.data,
@@ -56,9 +49,46 @@ class BoardViewSet(viewsets.ModelViewSet):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    def retrieve(self, request, pk=None):
+        try:
+            board = Board.objects.get(pk=pk)
+        except Board.DoesNotExist:
+            return Response(
+                {'error': 'Board not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        is_member = board.members.filter(id=request.user.id).exists()
+        is_owner = board.owner == request.user
+        
+        if not (is_member or is_owner):
+            return Response(
+                {'error': 'Not a board member'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = BoardDetailSerializer(board)
+        return Response(serializer.data)
 
     def update(self, request, pk=None, partial=False):
-        board = self.get_object()
+        try:
+            board = Board.objects.get(pk=pk)
+        except Board.DoesNotExist:
+            return Response(
+                {'error': 'Board not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        is_member = board.members.filter(id=request.user.id).exists()
+        is_owner = board.owner == request.user
+        
+        if not (is_member or is_owner):
+            return Response(
+                {'error': 'Not a board member'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         title = request.data.get('title', board.title)
         member_ids = request.data.get('members', [])
         
@@ -84,6 +114,24 @@ class BoardViewSet(viewsets.ModelViewSet):
             'owner_data': owner_data,
             'members_data': members_data
         })
+    
+    def destroy(self, request, pk=None):
+        try:
+            board = Board.objects.get(pk=pk)
+        except Board.DoesNotExist:
+            return Response(
+                {'error': 'Board not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if board.owner != request.user:
+            return Response(
+                {'error': 'Not board owner'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        board.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -97,11 +145,6 @@ class TaskViewSet(viewsets.ModelViewSet):
             models.Q(owner=user) | models.Q(members=user)
         )
         return Task.objects.filter(board__in=boards)
-
-    def get_permissions(self):
-        if self.action == 'destroy':
-            return [IsAuthenticated(), IsTaskCreatorOrBoardOwner()]
-        return [IsAuthenticated(), IsBoardMember()]
 
     def create(self, request):
         board_id = request.data.get('board')
@@ -141,9 +184,46 @@ class TaskViewSet(viewsets.ModelViewSet):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    def retrieve(self, request, pk=None):
+        try:
+            task = Task.objects.get(pk=pk)
+        except Task.DoesNotExist:
+            return Response(
+                {'error': 'Task not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        is_member = task.board.members.filter(id=request.user.id).exists()
+        is_owner = task.board.owner == request.user
+        
+        if not (is_member or is_owner):
+            return Response(
+                {'error': 'Not a board member'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = TaskSerializer(task)
+        return Response(serializer.data)
 
     def update(self, request, pk=None, partial=False):
-        task = self.get_object()
+        try:
+            task = Task.objects.get(pk=pk)
+        except Task.DoesNotExist:
+            return Response(
+                {'error': 'Task not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        is_member = task.board.members.filter(id=request.user.id).exists()
+        is_owner = task.board.owner == request.user
+        
+        if not (is_member or is_owner):
+            return Response(
+                {'error': 'Not a board member'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         serializer = self.get_serializer(
             task,
             data=request.data,
@@ -163,6 +243,27 @@ class TaskViewSet(viewsets.ModelViewSet):
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+    def destroy(self, request, pk=None):
+        try:
+            task = Task.objects.get(pk=pk)
+        except Task.DoesNotExist:
+            return Response(
+                {'error': 'Task not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        is_creator = task.created_by == request.user
+        is_board_owner = task.board.owner == request.user
+        
+        if not (is_creator or is_board_owner):
+            return Response(
+                {'error': 'Not authorized to delete this task'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        task.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'], url_path='assigned-to-me')
     def assigned_to_me(self, request):

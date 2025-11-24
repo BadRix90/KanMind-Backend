@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 from django.db import models
 from kanban_app.models import Board, Task, Comment
 from kanban_app.api.serializers import (
@@ -17,6 +18,7 @@ from auth_app.models import User
 
 class BoardViewSet(viewsets.ModelViewSet):
     """ViewSet für Boards"""
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -33,10 +35,10 @@ class BoardViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'destroy':
-            return [IsBoardOwner()]
+            return [IsAuthenticated(), IsBoardOwner()]
         if self.action in ['retrieve', 'update', 'partial_update']:
-            return [IsBoardMember()]
-        return super().get_permissions()
+            return [IsAuthenticated(), IsBoardMember()]
+        return [IsAuthenticated()]
 
     def create(self, request):
         serializer = self.get_serializer(
@@ -83,9 +85,11 @@ class BoardViewSet(viewsets.ModelViewSet):
             'members_data': members_data
         })
 
+
 class TaskViewSet(viewsets.ModelViewSet):
     """ViewSet für Tasks"""
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -96,8 +100,8 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'destroy':
-            return [IsTaskCreatorOrBoardOwner()]
-        return [IsBoardMember()]
+            return [IsAuthenticated(), IsTaskCreatorOrBoardOwner()]
+        return [IsAuthenticated(), IsBoardMember()]
 
     def create(self, request):
         board_id = request.data.get('board')
@@ -109,8 +113,10 @@ class TaskViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        if not (board.members.filter(id=request.user.id).exists()
-                or board.owner == request.user):
+        is_member = board.members.filter(id=request.user.id).exists()
+        is_owner = board.owner == request.user
+        
+        if not (is_member or is_owner):
             return Response(
                 {'error': 'Not a board member'},
                 status=status.HTTP_403_FORBIDDEN
@@ -173,6 +179,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
 class CommentListCreateView(APIView):
     """GET/POST /api/tasks/{task_id}/comments/"""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, task_id):
         try:
@@ -183,8 +190,10 @@ class CommentListCreateView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        if not (task.board.members.filter(id=request.user.id).exists()
-                or task.board.owner == request.user):
+        is_member = task.board.members.filter(id=request.user.id).exists()
+        is_owner = task.board.owner == request.user
+        
+        if not (is_member or is_owner):
             return Response(
                 {'error': 'Not a board member'},
                 status=status.HTTP_403_FORBIDDEN
@@ -203,8 +212,10 @@ class CommentListCreateView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        if not (task.board.members.filter(id=request.user.id).exists()
-                or task.board.owner == request.user):
+        is_member = task.board.members.filter(id=request.user.id).exists()
+        is_owner = task.board.owner == request.user
+        
+        if not (is_member or is_owner):
             return Response(
                 {'error': 'Not a board member'},
                 status=status.HTTP_403_FORBIDDEN
@@ -225,6 +236,7 @@ class CommentListCreateView(APIView):
 
 class CommentDeleteView(APIView):
     """DELETE /api/tasks/{task_id}/comments/{comment_id}/"""
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, task_id, comment_id):
         try:

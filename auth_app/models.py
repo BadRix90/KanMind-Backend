@@ -1,3 +1,4 @@
+"""Custom User model and manager for email-based authentication."""
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
@@ -6,20 +7,7 @@ class UserManager(BaseUserManager):
     """Custom manager for User model without username field."""
     
     def create_user(self, email, fullname, password=None):
-        """
-        Create and save a regular user with email and password.
-        
-        Args:
-            email: User's email address
-            fullname: User's full name
-            password: User's password (optional)
-            
-        Returns:
-            User: Created user instance
-            
-        Raises:
-            ValueError: If email is not provided
-        """
+        """Create and save a regular user with email and password."""
         if not email:
             raise ValueError('Email is required')
         user = self.model(
@@ -31,17 +19,7 @@ class UserManager(BaseUserManager):
         return user
     
     def create_superuser(self, email, fullname, password=None):
-        """
-        Create and save a superuser with email and password.
-        
-        Args:
-            email: Superuser's email address
-            fullname: Superuser's full name
-            password: Superuser's password (optional)
-            
-        Returns:
-            User: Created superuser instance
-        """
+        """Create and save a superuser with email and password."""
         user = self.create_user(email, fullname, password)
         user.is_staff = True
         user.is_superuser = True

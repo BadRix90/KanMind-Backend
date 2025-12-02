@@ -1,9 +1,11 @@
+"""Models for Kanban board application."""
 from django.db import models
 from auth_app.models import User
 
 
 class Board(models.Model):
-    """Board mit Owner und Members"""
+    """Kanban board with owner and members."""
+    
     title = models.CharField(max_length=255)
     owner = models.ForeignKey(
         User, 
@@ -13,6 +15,7 @@ class Board(models.Model):
     members = models.ManyToManyField(User, related_name='boards')
     
     def __str__(self):
+        """Return board title."""
         return self.title
     
     class Meta:
@@ -22,7 +25,8 @@ class Board(models.Model):
 
 
 class Task(models.Model):
-    """Task mit Status, Priority, Assignee, Reviewer"""
+    """Task with status, priority, assignee and reviewer."""
+    
     STATUS_CHOICES = [
         ('to-do', 'To Do'),
         ('in-progress', 'In Progress'),
@@ -66,6 +70,7 @@ class Task(models.Model):
     )
     
     def __str__(self):
+        """Return task title."""
         return self.title
     
     class Meta:
@@ -75,7 +80,8 @@ class Task(models.Model):
 
 
 class Comment(models.Model):
-    """Comment zu einer Task"""
+    """Comment on a task."""
+    
     task = models.ForeignKey(
         Task, 
         on_delete=models.CASCADE, 
@@ -90,6 +96,7 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
+        """Return comment description with author."""
         return f"Comment by {self.author.fullname}"
     
     class Meta:

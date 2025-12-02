@@ -3,9 +3,23 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    """Custom manager for User model without username field"""
+    """Custom manager for User model without username field."""
     
     def create_user(self, email, fullname, password=None):
+        """
+        Create and save a regular user with email and password.
+        
+        Args:
+            email: User's email address
+            fullname: User's full name
+            password: User's password (optional)
+            
+        Returns:
+            User: Created user instance
+            
+        Raises:
+            ValueError: If email is not provided
+        """
         if not email:
             raise ValueError('Email is required')
         user = self.model(
@@ -17,6 +31,17 @@ class UserManager(BaseUserManager):
         return user
     
     def create_superuser(self, email, fullname, password=None):
+        """
+        Create and save a superuser with email and password.
+        
+        Args:
+            email: Superuser's email address
+            fullname: Superuser's full name
+            password: Superuser's password (optional)
+            
+        Returns:
+            User: Created superuser instance
+        """
         user = self.create_user(email, fullname, password)
         user.is_staff = True
         user.is_superuser = True
@@ -25,7 +50,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    """Custom User model with fullname instead of first/last name"""
+    """Custom User model using email instead of username."""
+    
     username = None
     fullname = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
@@ -36,6 +62,7 @@ class User(AbstractUser):
     REQUIRED_FIELDS = ['fullname']
     
     def __str__(self):
+        """Return string representation of user."""
         return self.email
     
     class Meta:

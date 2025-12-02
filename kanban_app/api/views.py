@@ -1,7 +1,4 @@
-"""
-API views for Kanban board management.
-Provides CRUD operations for boards, tasks, and comments with permission checks.
-"""
+"""API views for Kanban board management."""
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -17,15 +14,19 @@ from auth_app.models import User
 
 
 class BoardViewSet(viewsets.ModelViewSet):
+    """ViewSet for board CRUD operations."""
+    
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """Return boards where user is owner or member."""
         user = self.request.user
         return Board.objects.filter(
             models.Q(owner=user) | models.Q(members=user)
         ).distinct()
 
     def get_serializer_class(self):
+        """Return appropriate serializer based on action."""
         if self.action == 'create':
             return BoardCreateSerializer
         if self.action == 'retrieve':
@@ -33,6 +34,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         return BoardListSerializer
 
     def create(self, request):
+        """Create a new board with members."""
         serializer = self.get_serializer(
             data=request.data,
             context={'request': request}
@@ -50,6 +52,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         )
     
     def retrieve(self, request, pk=None):
+        """Get board details with permission check."""
         try:
             board = Board.objects.get(pk=pk)
         except Board.DoesNotExist:
@@ -71,6 +74,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, pk=None, partial=False):
+        """Update board title and members."""
         try:
             board = Board.objects.get(pk=pk)
         except Board.DoesNotExist:
@@ -115,6 +119,7 @@ class BoardViewSet(viewsets.ModelViewSet):
         })
     
     def destroy(self, request, pk=None):
+        """Delete board (owner only)."""
         try:
             board = Board.objects.get(pk=pk)
         except Board.DoesNotExist:
@@ -134,10 +139,13 @@ class BoardViewSet(viewsets.ModelViewSet):
 
 
 class TaskViewSet(viewsets.ModelViewSet):
+    """ViewSet for task CRUD operations."""
+    
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """Return tasks from boards where user is owner or member."""
         user = self.request.user
         boards = Board.objects.filter(
             models.Q(owner=user) | models.Q(members=user)
@@ -145,6 +153,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Task.objects.filter(board__in=boards)
 
     def create(self, request):
+        """Create a new task with permission check."""
         board_id = request.data.get('board')
         try:
             board = Board.objects.get(id=board_id)
@@ -184,6 +193,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         )
     
     def retrieve(self, request, pk=None):
+        """Get task details with permission check."""
         try:
             task = Task.objects.get(pk=pk)
         except Task.DoesNotExist:
@@ -205,6 +215,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, pk=None, partial=False):
+        """Update task with permission check."""
         try:
             task = Task.objects.get(pk=pk)
         except Task.DoesNotExist:
@@ -243,6 +254,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         )
     
     def destroy(self, request, pk=None):
+        """Delete task (creator or board owner only)."""
         try:
             task = Task.objects.get(pk=pk)
         except Task.DoesNotExist:
@@ -265,21 +277,26 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='assigned-to-me')
     def assigned_to_me(self, request):
+        """Get tasks assigned to current user."""
         tasks = self.get_queryset().filter(assignee=request.user)
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='reviewing')
     def reviewing(self, request):
+        """Get tasks where current user is reviewer."""
         tasks = self.get_queryset().filter(reviewer=request.user)
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
 
 
 class CommentListCreateView(APIView):
+    """API view for listing and creating comments."""
+    
     permission_classes = [IsAuthenticated]
 
     def get(self, request, task_id):
+        """Get all comments for a task."""
         try:
             task = Task.objects.get(id=task_id)
         except Task.DoesNotExist:
@@ -302,6 +319,7 @@ class CommentListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request, task_id):
+        """Create a new comment on a task."""
         try:
             task = Task.objects.get(id=task_id)
         except Task.DoesNotExist:
@@ -333,9 +351,12 @@ class CommentListCreateView(APIView):
 
 
 class CommentDeleteView(APIView):
+    """API view for deleting comments."""
+    
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, task_id, comment_id):
+        """Delete a comment (author only)."""
         try:
             comment = Comment.objects.get(
                 id=comment_id,

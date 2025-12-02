@@ -1,7 +1,4 @@
-"""
-Test suite for authentication endpoints and User model.
-Covers registration, login, email verification, and user creation.
-"""
+"""Tests for authentication app."""
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -9,11 +6,14 @@ from auth_app.models import User
 
 
 class RegistrationTests(TestCase):
+    """Test suite for user registration endpoint."""
     
     def setUp(self):
+        """Set up test client before each test."""
         self.client = APIClient()
     
     def test_registration_success(self):
+        """Test successful user registration with valid data."""
         data = {
             'fullname': 'Test User',
             'email': 'test@test.de',
@@ -26,6 +26,7 @@ class RegistrationTests(TestCase):
         self.assertIn('user_id', response.data)
     
     def test_registration_password_mismatch(self):
+        """Test registration fails when passwords don't match."""
         data = {
             'fullname': 'Test',
             'email': 'test@test.de',
@@ -37,8 +38,10 @@ class RegistrationTests(TestCase):
 
 
 class LoginTests(TestCase):
+    """Test suite for user login endpoint."""
     
     def setUp(self):
+        """Set up test client and create test user."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@test.de',
@@ -47,20 +50,24 @@ class LoginTests(TestCase):
         )
     
     def test_login_success(self):
+        """Test successful login with valid credentials."""
         data = {'email': 'test@test.de', 'password': 'test1234'}
         response = self.client.post('/api/login/', data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('token', response.data)
     
     def test_login_invalid_credentials(self):
+        """Test login fails with incorrect password."""
         data = {'email': 'test@test.de', 'password': 'wrong'}
         response = self.client.post('/api/login/', data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class EmailCheckTests(TestCase):
+    """Test suite for email check endpoint."""
     
     def setUp(self):
+        """Set up authenticated test client."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@test.de',
@@ -70,23 +77,28 @@ class EmailCheckTests(TestCase):
         self.client.force_authenticate(user=self.user)
     
     def test_email_exists(self):
+        """Test email check returns user data for existing email."""
         response = self.client.get('/api/email-check/?email=test@test.de')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['email'], 'test@test.de')
     
     def test_email_not_found(self):
+        """Test email check returns 404 for non-existent email."""
         response = self.client.get('/api/email-check/?email=notfound@test.de')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
     
     def test_email_check_no_auth(self):
+        """Test email check requires authentication."""
         self.client.force_authenticate(user=None)
         response = self.client.get('/api/email-check/?email=test@test.de')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class UserModelTests(TestCase):
+    """Test suite for User model functionality."""
    
     def test_user_str(self):
+        """Test User string representation returns email."""
         user = User.objects.create_user(
             email='test@test.de',
             fullname='Test User',
@@ -95,6 +107,7 @@ class UserModelTests(TestCase):
         self.assertEqual(str(user), 'test@test.de')
     
     def test_create_superuser(self):
+        """Test superuser creation with correct permissions."""
         user = User.objects.create_superuser(
             email='admin@test.de',
             fullname='Admin',

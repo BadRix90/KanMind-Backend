@@ -1,3 +1,4 @@
+"""API views for user authentication and email validation."""
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,10 +11,12 @@ from auth_app.models import User
 
 
 class RegistrationView(APIView):
-    """POST /api/registration/ - User erstellen"""
+    """API endpoint for user registration."""
+    
     permission_classes = [AllowAny]
     
     def post(self, request):
+        # Create new user account and return auth token
         serializer = RegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -28,10 +31,12 @@ class RegistrationView(APIView):
 
 
 class LoginView(APIView):
-    """POST /api/login/ - User einloggen"""
+    """API endpoint for user login."""
+    
     permission_classes = [AllowAny]
     
     def post(self, request):
+        # Authenticate user and return auth token
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = authenticate(
@@ -46,14 +51,17 @@ class LoginView(APIView):
                     'email': user.email,
                     'user_id': user.id
                 })
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'Invalid credentials'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def email_check(request):
-    """GET /api/email-check/?email=test@test.de"""
+    """Check if an email address exists in the system."""
     email = request.query_params.get('email')
     if not email:
         return Response(

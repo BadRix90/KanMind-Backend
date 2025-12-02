@@ -1,3 +1,4 @@
+"""Tests for Kanban app."""
 from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework import status
@@ -6,8 +7,10 @@ from kanban_app.models import Board, Task, Comment
 
 
 class BoardTests(TestCase):
+    """Test suite for board endpoints."""
 
     def setUp(self):
+        """Set up authenticated test client and user."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@test.de',
@@ -17,12 +20,14 @@ class BoardTests(TestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_create_board(self):
+        """Test board creation with members."""
         data = {'title': 'Test Board', 'members': [self.user.id]}
         response = self.client.post('/api/boards/', data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['title'], 'Test Board')
 
     def test_list_boards(self):
+        """Test listing boards for authenticated user."""
         Board.objects.create(
             title='Board 1',
             owner=self.user
@@ -32,6 +37,7 @@ class BoardTests(TestCase):
         self.assertEqual(len(response.data), 1)
 
     def test_get_board_detail(self):
+        """Test retrieving board details."""
         board = Board.objects.create(
             title='Test',
             owner=self.user
@@ -42,6 +48,7 @@ class BoardTests(TestCase):
         self.assertEqual(response.data['title'], 'Test')
 
     def test_update_board(self):
+        """Test updating board title and members."""
         board = Board.objects.create(
             title='Old',
             owner=self.user
@@ -56,6 +63,7 @@ class BoardTests(TestCase):
         self.assertEqual(response.data['title'], 'New')
 
     def test_delete_board_owner(self):
+        """Test board deletion by owner."""
         board = Board.objects.create(
             title='Delete Me',
             owner=self.user
@@ -64,6 +72,7 @@ class BoardTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_delete_board_not_owner(self):
+        """Test board deletion fails for non-owner."""
         other_user = User.objects.create_user(
             email='other@test.de',
             fullname='Other',
@@ -78,8 +87,10 @@ class BoardTests(TestCase):
 
 
 class TaskTests(TestCase):
+    """Test suite for task endpoints."""
 
     def setUp(self):
+        """Set up authenticated test client with board."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@test.de',
@@ -94,6 +105,7 @@ class TaskTests(TestCase):
         self.board.members.add(self.user)
 
     def test_create_task(self):
+        """Test task creation on board."""
         data = {
             'board': self.board.id,
             'title': 'Test Task',
@@ -107,6 +119,7 @@ class TaskTests(TestCase):
         self.assertEqual(response.data['title'], 'Test Task')
 
     def test_update_task(self):
+        """Test task status and priority update."""
         task = Task.objects.create(
             board=self.board,
             title='Old Task',
@@ -120,6 +133,7 @@ class TaskTests(TestCase):
         self.assertEqual(response.data['status'], 'in-progress')
 
     def test_delete_task_creator(self):
+        """Test task deletion by creator."""
         task = Task.objects.create(
             board=self.board,
             title='Delete Me',
@@ -131,6 +145,7 @@ class TaskTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_get_assigned_tasks(self):
+        """Test retrieving tasks assigned to user."""
         Task.objects.create(
             board=self.board,
             title='Assigned to me',
@@ -144,6 +159,7 @@ class TaskTests(TestCase):
         self.assertEqual(len(response.data), 1)
 
     def test_get_reviewing_tasks(self):
+        """Test retrieving tasks for review by user."""
         Task.objects.create(
             board=self.board,
             title='Review Task',
@@ -158,8 +174,10 @@ class TaskTests(TestCase):
 
 
 class CommentTests(TestCase):
+    """Test suite for comment endpoints."""
 
     def setUp(self):
+        """Set up authenticated test client with task."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@test.de',
@@ -181,6 +199,7 @@ class CommentTests(TestCase):
         )
 
     def test_create_comment(self):
+        """Test comment creation on task."""
         data = {'content': 'Test Comment'}
         response = self.client.post(
             f'/api/tasks/{self.task.id}/comments/',
@@ -190,6 +209,7 @@ class CommentTests(TestCase):
         self.assertEqual(response.data['content'], 'Test Comment')
 
     def test_list_comments(self):
+        """Test listing comments for task."""
         Comment.objects.create(
             task=self.task,
             author=self.user,
@@ -202,6 +222,7 @@ class CommentTests(TestCase):
         self.assertEqual(len(response.data), 1)
 
     def test_delete_comment_author(self):
+        """Test comment deletion by author."""
         comment = Comment.objects.create(
             task=self.task,
             author=self.user,
@@ -213,6 +234,7 @@ class CommentTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
     def test_delete_comment_not_author(self):
+        """Test comment deletion fails for non-author."""
         other_user = User.objects.create_user(
             email='other@test.de',
             fullname='Other',
@@ -230,8 +252,10 @@ class CommentTests(TestCase):
 
 
 class PermissionTests(TestCase):
+    """Test suite for permission checks."""
 
     def setUp(self):
+        """Set up test users and board."""
         self.client = APIClient()
         self.user1 = User.objects.create_user(
             email='user1@test.de',
@@ -250,11 +274,13 @@ class PermissionTests(TestCase):
         self.board.members.add(self.user1)
 
     def test_board_access_not_member(self):
+        """Test board access denied for non-member."""
         self.client.force_authenticate(user=self.user2)
         response = self.client.get(f'/api/boards/{self.board.id}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_task_create_not_member(self):
+        """Test task creation denied for non-member."""
         self.client.force_authenticate(user=self.user2)
         data = {
             'board': self.board.id,
@@ -267,8 +293,10 @@ class PermissionTests(TestCase):
 
 
 class ModelTests(TestCase):
+    """Test suite for model functionality."""
 
     def setUp(self):
+        """Set up test user and board."""
         self.user = User.objects.create_user(
             email='test@test.de',
             fullname='Test User',
@@ -280,9 +308,11 @@ class ModelTests(TestCase):
         )
 
     def test_board_str(self):
+        """Test Board string representation."""
         self.assertEqual(str(self.board), 'Test Board')
 
     def test_task_str(self):
+        """Test Task string representation."""
         task = Task.objects.create(
             board=self.board,
             title='Test Task',
@@ -293,6 +323,7 @@ class ModelTests(TestCase):
         self.assertEqual(str(task), 'Test Task')
 
     def test_comment_str(self):
+        """Test Comment string representation."""
         task = Task.objects.create(
             board=self.board,
             title='Task',
@@ -309,8 +340,10 @@ class ModelTests(TestCase):
 
 
 class EdgeCaseTests(TestCase):
+    """Test suite for edge cases and error handling."""
 
     def setUp(self):
+        """Set up authenticated test client with board."""
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@test.de',
@@ -325,6 +358,7 @@ class EdgeCaseTests(TestCase):
         self.board.members.add(self.user)
 
     def test_create_task_invalid_board(self):
+        """Test task creation with non-existent board."""
         data = {
             'board': 9999,
             'title': 'Task',
@@ -335,10 +369,12 @@ class EdgeCaseTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_comment_invalid_task(self):
+        """Test comment listing for non-existent task."""
         response = self.client.get('/api/tasks/9999/comments/')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_task_with_assignee(self):
+        """Test task creation with assignee."""
         data = {
             'board': self.board.id,
             'title': 'Task',
@@ -351,6 +387,7 @@ class EdgeCaseTests(TestCase):
         self.assertEqual(response.data['assignee']['id'], self.user.id)
 
     def test_task_with_reviewer(self):
+        """Test task creation with reviewer."""
         data = {
             'board': self.board.id,
             'title': 'Task',
